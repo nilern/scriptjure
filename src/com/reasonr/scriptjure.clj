@@ -80,7 +80,7 @@
 (defmethod emit :default [expr]
   (str expr))
 
-(def special-forms (set ['var '. '.. 'if 'funcall 'fn 'quote 'set! 'return 'delete 'new 'do 'aget 'while 'doseq 'str 'inc! 'dec! 'dec 'inc 'defined? 'and 'or '? 'try 'break]))
+(def special-forms (set ['var '. '.. 'if 'funcall 'fn 'function 'quote 'set! 'return 'delete 'new 'do 'aget 'while 'doseq 'str 'inc! 'dec! 'dec 'inc 'defined? 'and 'or '? 'try 'break]))
 
 (def prefix-unary-operators (set ['!]))
 
@@ -232,13 +232,15 @@
            (str/join ", " (map emit @var-declarations))
            statement-separator)))
 
-(defn emit-function [name sig body]
-  (assert (or (symbol? name) (nil? name)))
-  (assert (vector? sig))
-  (with-var-declarations
-    (let [body (emit-do body)]
-      (str "function " (comma-list sig) " {\n"
-           (emit-var-declarations) body " }"))))
+(defn emit-function
+  ([name sig body declaration]
+   (assert (or (symbol? name) (nil? name)))
+   (assert (vector? sig))
+   (with-var-declarations
+     (let [body (emit-do body)]
+       (str "function " (when declaration name) (comma-list sig) " {\n"
+            (emit-var-declarations) body " }"))))
+  ([name sig body] (emit-function name sig body nil)))
 
 (defmethod emit-special 'fn [type [fn & expr]]
   (let [name (when (symbol? (first expr)) (first expr))]
@@ -251,6 +253,10 @@
       (let [signature (first expr)
             body (rest expr)]
         (str (emit-function nil signature body))))))
+
+(defmethod emit-special 'function [type [fn & expr]]
+  (let [name (first expr), signature (second expr), body (rest (rest expr))]
+    (emit-function name signature body :declaration)))
 
 (defmethod emit-special 'try [type [try & body :as expression]]
   (let [try-body (remove #(contains? #{'catch 'finally} (first %))

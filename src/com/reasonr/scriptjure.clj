@@ -156,7 +156,7 @@
        (when (first false-form)
          (str " else { \n"
               (emit (first false-form))
-              " }"))))
+              "\n }"))))
        
 (defmethod emit-special 'dot-method [type [method obj & args]]
   (let [method (symbol (rstr/drop 1 (str method)))]

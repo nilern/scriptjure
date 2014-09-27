@@ -2,3 +2,4 @@
 *.iml
 .nrepl-*
 /target
+pom.*
